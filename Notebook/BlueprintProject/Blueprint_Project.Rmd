@@ -1,0 +1,131 @@
+---
+title: "R Notebook| Datenanalyse & Datenaufbereitung"
+author: "Yusuf Adni Yavuz"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+---
+
+
+#Basiscs
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+## Bibliotheken aus Libraries.R verwenden
+
+```{r}
+source(here::here("R_Libraries", "Libraries.R")) #here("Ordner1","Dateiname.ext") lädt Bibliotheken
+
+
+```
+
+
+## Daten laden
+
+```{r}
+# CSV
+#daten_csv <- read_csv(here("Data","2025", "daten.csv"))
+
+
+# Excel
+#daten_xlsx <- read_excel(here("Data","2025", "daten.xlsx"), shet = 1)
+
+
+# SPSS / Stata / SAS
+# daten_spss <- heaven::read_sav(here("Data","2025", "daten.sav"))
+
+
+# JSON
+# daten_json <- jsonlite::fromJSON(here("Data","2025", "daten.json"))
+
+
+
+```
+
+
+
+#Datenbanken
+
+```{r}
+# PostgreSQL
+#con_pg <- dbConnect(
+#  RPostgres::Postgres(),
+#  dbname = "meine_datenbank",
+#  host = "localhost",
+#  port = 5432,
+#  user = "user",
+#  password = "password"
+#)  #verbindung herstellen
+#daten_pg <- dbGetQuery(con_pg, "SELECT * FROM tabelle LIMIT 100") # abgreifen der Daten
+#dbDisconnect(con_pg) # Verbindung trennen nach verwendung!!!!
+
+
+# SQLite
+#con_sqlite <- dbConnect(RSQLite::SQLite(), "meine_db.sqlite") # verbindung herstellen
+#daten_sqlite <- dbGetQuery(con_sqlite, "SELECT * FROM tabelle") # Daten abgreifen
+#dbDisconnect((con_sqlite)) # Verbindung trennen nach Verwendung!!!
+
+
+
+```
+
+## Datenaufbereitung:
+```{r}
+#names(daten)
+
+#summary(daten)
+
+
+
+
+#daten <- daten_csv %>%
+#  janitor::clean_names() %>%
+#  mutate(
+#    datum = lubridate::as_date(datum),
+#    kategorie = as.factor(Kategorie)
+#  ) %>%
+#  filter(!is.na(wert))
+#
+# Fehlende Werte Prüfen
+#colSums(is.na(daten))
+```
+
+
+
+## änderunen in github durchführen
+
+git status - zeigt alle untracked (neu) und modified (geändert) Dateien an
+
+git add .  - alle änderungen, oder neuen Daten hinzufügen
+
+oder:
+
+git add R/Libraries.R
+git add Notebooks/Analysis2.Rmd
+git add Daten/2025%
+
+
+git commit -m "Kurze Beschreibung der Änderung, zB neues Notebook und zusätzliche Daten"  - commit Nachricht
+
+git push  - Änderungen pushen
+
+
+
+Nur falls ich den Branch noch nicht mit dem Remote verknüpft habe:
+
+git push -u origin main
+
+

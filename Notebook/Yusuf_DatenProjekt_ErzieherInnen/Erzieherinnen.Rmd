@@ -1,0 +1,250 @@
+---
+title: "R Notebook| Datenanalyse & Datenaufbereitung"
+author: "Yusuf Adni Yavuz"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+---
+
+## Bibliotheken aus Libraries.R verwenden
+
+```{r}
+source(here::here("R_Libraries", "Libraries.R")) #here("Ordner1","Dateiname.ext") lädt Bibliotheken
+```
+
+## Daten laden
+```{r}
+# CSV
+kldbdaten_CSV <- read_csv(here("Daten","Yusuf_DatenProjekt_Erzieherinnen", "kldb_2024.csv"))
+```
+
+```{r}
+kldb <- kldbdaten_CSV
+summary(kldb)
+kldb_c <- kldb
+show(kldb_c)
+```
+
+## Datenaufbereitung
+```{r}
+
+kldb_cc <- kldb_c %>%
+  mutate(across(c(posting_id,kldb_id), as.factor)) 
+summary(kldb_cc)
+```
+## kldb:
+1:finde alle kldb einträge für Berufscode: 8311X → Erzieher*innen 
+
+```{r}
+erzieherInnen <- kldb_cc %>%
+  filter(kldb_id %in% c(83110:83114))%>%
+  group_by(kldb_id) %>%
+  summarise(anzahl = n()) %>%
+  mutate(prozent = round(100*anzahl/sum(anzahl),2))%>%
+  arrange(desc(prozent)) %>%
+  
+
+labels()  
+
+
+erzieherInnen
+
+
+```
+
+## Visualisierung:
+```{r}
+plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
+  geom_col(fill = "steelblue")+
+  geom_text(aes(label = paste0(prozent, "%")),
+            vjust = -0.3,
+            size = 4)+
+  scale_x_discrete(labels = c(
+   "83111" = "Aushilfe", 
+   "83112" = "Fachkraft", 
+   "83113" = "Spezialist"
+   )) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"))+
+  labs(
+    x = "KLD-Berufsgruppe",
+    y = "Prozentanteil",
+    title = "Erzieher:innen - Verteilung nach KLD-Berufsgruppen im Jahre 2024"
+  ) +
+  theme_minimal(base_size = 13)+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(face = "bold")
+  )
+plot_codes
+
+```
+
+<<<<<<< HEAD
+## Daten finden und zuweisen:
+```{r}
+
+# Pfad definieren
+ziel_ordner <- "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze"
+
+# Alle csv und xlsx Dateien finden (rekursiv)
+alle_dateien <- list.files(
+  path = ziel_ordner, 
+  pattern = "\\.(csv|xlsx)$", 
+  recursive = TRUE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
+
+
+such_pattern <- "Benefits_2019"
+# such_pattern <- "Muster"  # Beispiel: "Muster" 
+
+# Wenn such_pattern nicht NULL ist, filtere dateien danach
+if (!is.null(such_pattern)) {
+  dateien_zu_laden <- grep(such_pattern, alle_dateien, value = TRUE)
+} else {
+  dateien_zu_laden <- alle_dateien
+}
+
+
+geladene_daten <- lapply(dateien_zu_laden, function(datei) {
+  if (grepl("\\.csv$", datei, ignore.case = TRUE)) {
+    read_csv(datei)
+  } else if (grepl("\\.xlsx$", datei, ignore.case = TRUE)) {
+    # Falls readxl installiert ist
+    readxl::read_excel(datei)
+  } else {
+    NULL
+  }
+})
+
+# Optional: Namen für geladene Daten setzen
+#names(geladene_daten) <- basename(dateien_zu_laden)
+
+data <- data.frame(geladene_daten)
+summary(data)
+
+```
+
+
+```{r}
+data <- data %>%
+  mutate(across(c(posting_id,concept), as.factor)) 
+data
+
+```
+
+
+
+
+## Daten für Benefits2019 filtern und Aufbereiten:
+
+```{r}
+
+
+# Beispiel: Analyse der Benefits pro Stellenausschreibung
+df <- data
+# 1. Neue Spalten für spezifische Benefits anlegen (logisch: TRUE/FALSE)
+df <- df %>%
+  mutate(
+    hat_13_monatsgehalt = grepl("13-Monatsgehalt", span_normalized, ignore.case = TRUE),
+    hat_urlaubsgeld = grepl("Urlaubsgeld", span_normalized, ignore.case = TRUE),
+    hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
+    hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE)
+  )
+
+# 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
+benefits_summary <- df %>%
+  group_by(posting_id) %>%
+  summarise(
+    anzahl_benefits = n(),  # Gesamtanzahl aller Benefits
+    hat_13_monatsgehalt = any(hat_13_monatsgehalt),
+    hat_urlaubsgeld = any(hat_urlaubsgeld),
+    hat_beide = any(hat_13_monatsgehalt & hat_urlaubsgeld),
+    hat_fortbildung = any(hat_fortbildung),
+    hat_gesundheit = any(hat_gesundheit)
+  )
+
+# 3. Ergebnis anschauen
+print(benefits_summary)
+
+```
+
+## Auswertung A: Häufigkeit Benefits in Ausschreibungen in 2019
+
+```{r}
+
+# Zähle, wie viele Stellen jeweils den Benefit haben
+benefits_summary_long <- benefits_summary %>%
+  select(hat_13_monatsgehalt, hat_urlaubsgeld, hat_beide, hat_fortbildung, hat_gesundheit) %>%
+  summarise_all(~ sum(.)) %>%
+  pivot_longer(cols = everything(), names_to = "Benefit", values_to = "Anzahl")
+
+# Visualisierung
+ggplot(benefits_summary_long, aes(x = Benefit, y = Anzahl, fill = Benefit)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Häufigkeit ausgewählter Benefits", x = "Benefit", y = "Anzahl der Stellen")
+```
+
+## Auswertung B: Verteilung der Anzahl an Benefits pro Stellenausschreibung
+
+```{r}
+
+ggplot(benefits_summary, aes(x = anzahl_benefits)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  theme_minimal() +
+  labs(title = "Anzahl der Benefits pro Stellenausschreibung",
+       x = "Benefits pro Stelle", y = "Anzahl Stellen")
+
+
+```
+
+
+
+## funktion dateilader ausprobieren:
+
+```{r}
+source(here("DateiLader", "DateiLader.R"))
+
+data_benefits  <- Datei_laden(
+ pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze",
+  pattern = "Benefits_"
+)
+
+db19 <- data_benefits[[1]]
+db20 <- data_benefits[[2]]
+db21 <- data_benefits[[3]]
+db22 <- data_benefits[[4]]
+db23 <- data_benefits[[5]]
+db24 <- data_benefits[[6]]
+```
+
+
+
+```{r}
+db19
+
+db20
+
+db21
+
+db22
+
+db23
+
+db24
+```
+
+
+```{r}
+
+```
+
+
+
