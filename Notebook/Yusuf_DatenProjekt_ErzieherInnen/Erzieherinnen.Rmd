@@ -17,25 +17,53 @@ source(here::here("R_Libraries", "Libraries.R")) #here("Ordner1","Dateiname.ext"
 ```
 
 ## Daten laden
-```{r}
-# CSV
-kldbdaten_CSV <- read_csv(here("Daten","Yusuf_DatenProjekt_Erzieherinnen", "kldb_2024.csv"))
-```
+## Daten finden und zuweisen:
+
 
 ```{r}
-kldb <- kldbdaten_CSV
-summary(kldb)
-kldb_c <- kldb
-show(kldb_c)
+source(here("DateiLader", "DateiLader.R"))
+
+data_benefits  <- Datei_laden(
+ pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Zusatzleistungen - Wir bieten",
+  pattern = "Benefits_"
+)
+
+db19 <- data_benefits[[1]]
+db20 <- data_benefits[[2]]
+db21 <- data_benefits[[3]]
+db22 <- data_benefits[[4]]
+db23 <- data_benefits[[5]]
+db24 <- data_benefits[[6]]
+
+
+#
+
+db19
+
+db20
+
+db21
+
+db22
+
+db23
+
+db24
 ```
 
-## Datenaufbereitung
+
+
 ```{r}
 
-kldb_cc <- kldb_c %>%
-  mutate(across(c(posting_id,kldb_id), as.factor)) 
-summary(kldb_cc)
 ```
+
+
+```{r}
+
+```
+
+
+
 ## kldb:
 1:finde alle kldb einträge für Berufscode: 8311X → Erzieher*innen 
 
@@ -84,65 +112,12 @@ plot_codes
 
 ```
 
-<<<<<<< HEAD
-## Daten finden und zuweisen:
-```{r}
-
-# Pfad definieren
-ziel_ordner <- "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze"
-
-# Alle csv und xlsx Dateien finden (rekursiv)
-alle_dateien <- list.files(
-  path = ziel_ordner, 
-  pattern = "\\.(csv|xlsx)$", 
-  recursive = TRUE,
-  full.names = TRUE,
-  ignore.case = TRUE
-)
-
-
-such_pattern <- "Benefits_2019"
-# such_pattern <- "Muster"  # Beispiel: "Muster" 
-
-# Wenn such_pattern nicht NULL ist, filtere dateien danach
-if (!is.null(such_pattern)) {
-  dateien_zu_laden <- grep(such_pattern, alle_dateien, value = TRUE)
-} else {
-  dateien_zu_laden <- alle_dateien
-}
-
-
-geladene_daten <- lapply(dateien_zu_laden, function(datei) {
-  if (grepl("\\.csv$", datei, ignore.case = TRUE)) {
-    read_csv(datei)
-  } else if (grepl("\\.xlsx$", datei, ignore.case = TRUE)) {
-    # Falls readxl installiert ist
-    readxl::read_excel(datei)
-  } else {
-    NULL
-  }
-})
-
-# Optional: Namen für geladene Daten setzen
-#names(geladene_daten) <- basename(dateien_zu_laden)
-
-data <- data.frame(geladene_daten)
-summary(data)
-
-```
-
-
-```{r}
-data <- data %>%
-  mutate(across(c(posting_id,concept), as.factor)) 
-data
-
-```
 
 
 
 
-## Daten für Benefits2019 filtern und Aufbereiten:
+
+## Daten filtern und Aufbereiten:
 
 ```{r}
 
@@ -207,44 +182,6 @@ ggplot(benefits_summary, aes(x = anzahl_benefits)) +
 
 
 
-## funktion dateilader ausprobieren:
-
-```{r}
-source(here("DateiLader", "DateiLader.R"))
-
-data_benefits  <- Datei_laden(
- pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze",
-  pattern = "Benefits_"
-)
-
-db19 <- data_benefits[[1]]
-db20 <- data_benefits[[2]]
-db21 <- data_benefits[[3]]
-db22 <- data_benefits[[4]]
-db23 <- data_benefits[[5]]
-db24 <- data_benefits[[6]]
-```
-
-
-
-```{r}
-db19
-
-db20
-
-db21
-
-db22
-
-db23
-
-db24
-```
-
-
-```{r}
-
-```
 
 
 
