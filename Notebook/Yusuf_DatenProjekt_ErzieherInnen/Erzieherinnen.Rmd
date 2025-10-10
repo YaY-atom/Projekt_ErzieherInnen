@@ -20,47 +20,50 @@ source(here::here("R_Libraries", "Libraries.R")) #here("Ordner1","Dateiname.ext"
 ## Daten finden und zuweisen:
 
 
+
+
+## Benefits2019
+
 ```{r}
 source(here("DateiLader", "DateiLader.R"))
 
 data_benefits  <- Datei_laden(
  pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Zusatzleistungen - Wir bieten",
-  pattern = "Benefits_2020"
+  pattern = "Benefits_2019"
 )
 
-db20 <- data_benefits[[1]]
+db19 <- data_benefits[[1]]
 
 
 
 #
 
-db19
-db20
+#db19
+db19 <- db19 %>%
+  mutate(across(c(concept, span, span_normalized), as.factor))
 
+summary(db19)
 ```
 
-
-
-
-
-
-
-
-
-## Daten filtern und Aufbereiten:2019
+## 2019
 
 ```{r}
-
-
 # Beispiel: Analyse der Benefits pro Stellenausschreibung
-df <- db19
+df <- db19 
+
+
+
+
+
 # 1. Neue Spalten für spezifische Benefits anlegen (logisch: TRUE/FALSE)
 df <- df %>%
   mutate(
-    hat_13_monatsgehalt = grepl("13-Monatsgehalt", span_normalized, ignore.case = TRUE),
+    hat_13_monatsgehalt = grepl("Weihnachts_13_Gehalt", span_normalized, ignore.case = TRUE),
     hat_urlaubsgeld = grepl("Urlaubsgeld", span_normalized, ignore.case = TRUE),
+    hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
-    hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE)
+    hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE),
+    hat_wasser = grepl("Wasser|Getränke|Kaffe",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -70,15 +73,18 @@ benefits_summary <- df %>%
     anzahl_benefits = n(),  # Gesamtanzahl aller Benefits
     hat_13_monatsgehalt = any(hat_13_monatsgehalt),
     hat_urlaubsgeld = any(hat_urlaubsgeld),
-    hat_beide = any(hat_13_monatsgehalt & hat_urlaubsgeld),
+    hat_urlaubsgeld_13_monatsgehalt = any(hat_urlaubsgeld_13_monatsgehalt),
     hat_fortbildung = any(hat_fortbildung),
-    hat_gesundheit = any(hat_gesundheit)
+    hat_gesundheit = any(hat_gesundheit),
+    hat_wasser = any(hat_wasser)
   )
 
 # 3. Ergebnis anschauen
-print(benefits_summary)
+benefits_summary
 
+summary(benefits_summary)
 ```
+
 
 ## Auswertung A: Häufigkeit Benefits in Ausschreibungen in 2019
 
@@ -87,13 +93,13 @@ print(benefits_summary)
 # Gesamtanzahl der Stellen berechnen
 gesamtanzahl <- nrow(benefits_summary)
 
-# Zähle, wie viele Stellen jeweils den Benefit haben und berechne den Prozentwert, sortiere nach Prozent absteigend
+
 benefits_summary_long <- benefits_summary %>%
-  select(hat_13_monatsgehalt, hat_urlaubsgeld, hat_beide, hat_fortbildung, hat_gesundheit) %>%
+  select(hat_13_monatsgehalt, hat_urlaubsgeld, hat_urlaubsgeld_13_monatsgehalt, hat_fortbildung, hat_gesundheit, hat_wasser) %>%
   summarise_all(~ sum(.)) %>%
   pivot_longer(cols = everything(), names_to = "Benefit", values_to = "Anzahl") %>%
-  mutate(Prozent = (Anzahl / gesamtanzahl) * 100) %>%
-  arrange(desc(Prozent))
+  mutate(Prozent = (Anzahl / gesamtanzahl) * 100,
+         Benefit = fct_reorder(Benefit, Prozent, .desc = TRUE))  # Sortierung hier
 
 ggplot(benefits_summary_long, aes(x = Benefit, y = Prozent)) +
   geom_bar(stat = "identity", fill = "steelblue") +
@@ -109,7 +115,8 @@ ggplot(benefits_summary_long, aes(x = Benefit, y = Prozent)) +
 
 ```
 
-## Auswertung B: Verteilung der Anzahl an Benefits pro Stellenausschreibung
+
+## Auswertung B: Verteilung der Anzahl an Benefits pro Stellenausschreibung 2019
 
 ```{r}
 
@@ -125,13 +132,37 @@ ggplot(benefits_summary, aes(x = anzahl_benefits)) +
 
 
 
+
+## 2020
+
+```{r}
+source(here("DateiLader", "DateiLader.R"))
+
+data_benefits  <- Datei_laden(
+ pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Zusatzleistungen - Wir bieten",
+  pattern = "Benefits_2020"
+)
+
+db20 <- data_benefits[[1]]
+
+
+
+#
+
+#db19
+db20 <- db20 %>%
+  mutate(across(c(concept, span, span_normalized), as.factor))
+
+summary(db20)
+```
+
 ## Daten filtern und Aufbereiten:2020
 
 ```{r}
 
 
 # Beispiel: Analyse der Benefits pro Stellenausschreibung
-df <- db20
+df <- db20 
 
 
 
@@ -140,10 +171,12 @@ df <- db20
 # 1. Neue Spalten für spezifische Benefits anlegen (logisch: TRUE/FALSE)
 df <- df %>%
   mutate(
-    hat_13_monatsgehalt = grepl("13-Monatsgehalt", span_normalized, ignore.case = TRUE),
+    hat_13_monatsgehalt = grepl("Weihnachts_13_Gehalt", span_normalized, ignore.case = TRUE),
     hat_urlaubsgeld = grepl("Urlaubsgeld", span_normalized, ignore.case = TRUE),
+    hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
-    hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE)
+    hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE),
+    hat_wasser = grepl("Wasser|Getränke|Kaffe",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -153,13 +186,16 @@ benefits_summary <- df %>%
     anzahl_benefits = n(),  # Gesamtanzahl aller Benefits
     hat_13_monatsgehalt = any(hat_13_monatsgehalt),
     hat_urlaubsgeld = any(hat_urlaubsgeld),
-    hat_beide = any(hat_13_monatsgehalt & hat_urlaubsgeld),
+    hat_urlaubsgeld_13_monatsgehalt = any(hat_urlaubsgeld_13_monatsgehalt),
     hat_fortbildung = any(hat_fortbildung),
-    hat_gesundheit = any(hat_gesundheit)
+    hat_gesundheit = any(hat_gesundheit),
+    hat_wasser = any(hat_wasser)
   )
 
 # 3. Ergebnis anschauen
-print(benefits_summary)
+benefits_summary
+
+summary(benefits_summary)
 
 ```
 
@@ -170,13 +206,13 @@ print(benefits_summary)
 # Gesamtanzahl der Stellen berechnen
 gesamtanzahl <- nrow(benefits_summary)
 
-# Zähle, wie viele Stellen jeweils den Benefit haben und berechne den Prozentwert, sortiere nach Prozent absteigend
+
 benefits_summary_long <- benefits_summary %>%
-  select(hat_13_monatsgehalt, hat_urlaubsgeld, hat_beide, hat_fortbildung, hat_gesundheit) %>%
+  select(hat_13_monatsgehalt, hat_urlaubsgeld, hat_urlaubsgeld_13_monatsgehalt, hat_fortbildung, hat_gesundheit, hat_wasser) %>%
   summarise_all(~ sum(.)) %>%
   pivot_longer(cols = everything(), names_to = "Benefit", values_to = "Anzahl") %>%
-  mutate(Prozent = (Anzahl / gesamtanzahl) * 100) %>%
-  arrange(desc(Prozent))
+  mutate(Prozent = (Anzahl / gesamtanzahl) * 100,
+         Benefit = fct_reorder(Benefit, Prozent, .desc = TRUE))  # Sortierung hier
 
 ggplot(benefits_summary_long, aes(x = Benefit, y = Prozent)) +
   geom_bar(stat = "identity", fill = "steelblue") +
