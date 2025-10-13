@@ -2,12 +2,14 @@
 title: "R Notebook| Datenanalyse & Datenaufbereitung"
 author: "Yusuf Adni Yavuz"
 date: "`r Sys.Date()`"
-output: 
+output:
   html_document:
     toc: true
     toc_float: true
     theme: cosmo
     code_folding: hide
+  pdf_document:
+    toc: true
 ---
 
 ## Bibliotheken aus Libraries.R verwenden
@@ -17,10 +19,8 @@ source(here::here("R_Libraries", "Libraries.R")) #here("Ordner1","Dateiname.ext"
 ```
 
 ## Daten laden
+
 ## Daten finden und zuweisen:
-
-
-
 
 ## Benefits2019
 
@@ -63,7 +63,7 @@ df <- df %>%
     hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
     hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE) ,
-    hat_wasser = grepl("Wasser|Getränke|Kaffe",concept, ignore.case = TRUE)
+    hat_wasser = grepl("Wasser|Getränke|Kaffee",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -84,7 +84,6 @@ benefits_summary
 
 summary(benefits_summary)
 ```
-
 
 ## Auswertung A: Häufigkeit Benefits in Ausschreibungen in 2019
 
@@ -115,7 +114,6 @@ ggplot(benefits_summary_long, aes(x = Benefit, y = Prozent)) +
 
 ```
 
-
 ## Auswertung B: Verteilung der Anzahl an Benefits pro Stellenausschreibung 2019
 
 ```{r}
@@ -128,10 +126,6 @@ ggplot(benefits_summary, aes(x = anzahl_benefits)) +
 
 
 ```
-
-
-
-
 
 ## 2020
 
@@ -176,7 +170,7 @@ df <- df %>%
     hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
     hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE),
-    hat_wasser = grepl("Wasser|Getränke|Kaffe",concept, ignore.case = TRUE)
+    hat_wasser = grepl("Wasser|Getränke|Kaffee",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -241,8 +235,6 @@ ggplot(benefits_summary, aes(x = anzahl_benefits)) +
 
 ```
 
-
-
 ## 2021
 
 ```{r}
@@ -266,7 +258,6 @@ db21 <- db21 %>%
 summary(db21)
 ```
 
-
 ## Daten filtern und Aufbereiten:2021
 
 ```{r}
@@ -287,7 +278,7 @@ df <- df %>%
     hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
     hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE),
-    hat_wasser = grepl("Wasser|Getränke|Kaffe",concept, ignore.case = TRUE)
+    hat_wasser = grepl("Wasser|Getränke|Kaffee",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -375,7 +366,6 @@ db22 <- db22 %>%
 summary(db22)
 ```
 
-
 ## Daten filtern und Aufbereiten:2022
 
 ```{r}
@@ -396,7 +386,7 @@ df <- df %>%
     hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
     hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE),
-    hat_wasser = grepl("Wasser|Getränke|Kaffe",concept, ignore.case = TRUE)
+    hat_wasser = grepl("Wasser|Getränke|Kaffee",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -461,7 +451,6 @@ ggplot(benefits_summary, aes(x = anzahl_benefits)) +
 
 ```
 
-
 ## 2023
 
 ```{r}
@@ -485,7 +474,6 @@ db23 <- db23 %>%
 summary(db23)
 ```
 
-
 ## Daten filtern und Aufbereiten:2023
 
 ```{r}
@@ -506,7 +494,7 @@ df <- df %>%
     hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
     hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE),
-    hat_wasser = grepl("Wasser|Getränke|Kaffe",concept, ignore.case = TRUE)
+    hat_wasser = grepl("Wasser|Getränke|Kaffee",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -571,9 +559,8 @@ ggplot(benefits_summary, aes(x = anzahl_benefits)) +
 
 ```
 
-
-
 ## 2024
+
 ```{r}
 source(here("DateiLader", "DateiLader.R"))
 
@@ -595,7 +582,6 @@ db24 <- db24 %>%
 summary(db24)
 ```
 
-
 ## Daten filtern und Aufbereiten:2024
 
 ```{r}
@@ -616,7 +602,7 @@ df <- df %>%
     hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
     hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE),
-    hat_wasser = grepl("Wasser|Getränke|Kaffe",concept, ignore.case = TRUE)
+    hat_wasser = grepl("Wasser|Getränke|Kaffee",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -681,16 +667,6 @@ ggplot(benefits_summary, aes(x = anzahl_benefits)) +
 
 ```
 
-
-
-
-
-
-
-
-
-
-
 ## KLDB : Erzieher:Innen 2019
 
 ```{r}
@@ -715,19 +691,14 @@ kldb24 <- data_benefits[[6]]
 
 ```
 
-
 ```{r}
 kldb19
 
 ```
 
-
-
-
-
-
 ## kldb: 2019
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher*innen 
+
+1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
 
 ```{r}
 erzieherInnen <- kldb19 %>%
@@ -748,6 +719,7 @@ summary(erzieherInnen)
 ```
 
 ## Visualisierung:
+
 ```{r}
 plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
   geom_col(fill = "steelblue")+
@@ -776,9 +748,9 @@ plot_codes
 
 ```
 
-
 ## kldb:2020
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher*innen 
+
+1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
 
 ```{r}
 erzieherInnen <- kldb20 %>%
@@ -799,6 +771,7 @@ summary(erzieherInnen)
 ```
 
 ## Visualisierung:
+
 ```{r}
 plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
   geom_col(fill = "steelblue")+
@@ -831,7 +804,7 @@ plot_codes
 
 ## 2021
 
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher*innen 
+1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
 
 ```{r}
 erzieherInnen <- kldb21 %>%
@@ -850,8 +823,6 @@ summary(erzieherInnen)
 
 
 ```
-
-
 
 ## visualisierung:
 
@@ -888,7 +859,7 @@ plot_codes
 
 ## 2022
 
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher*innen 
+1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
 
 ```{r}
 erzieherInnen <- kldb22 %>%
@@ -907,8 +878,6 @@ summary(erzieherInnen)
 
 
 ```
-
-
 
 ```{r}
 plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
@@ -943,7 +912,7 @@ plot_codes
 
 ## 2023
 
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher*innen 
+1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
 
 ```{r}
 erzieherInnen <- kldb23 %>%
@@ -962,8 +931,6 @@ summary(erzieherInnen)
 
 
 ```
-
-
 
 ```{r}
 plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
@@ -998,7 +965,7 @@ plot_codes
 
 ## 2024
 
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher*innen 
+1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
 
 ```{r}
 erzieherInnen <- kldb24 %>%
@@ -1017,8 +984,6 @@ summary(erzieherInnen)
 
 
 ```
-
-
 
 ```{r}
 plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+

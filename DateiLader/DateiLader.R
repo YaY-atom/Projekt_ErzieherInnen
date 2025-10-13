@@ -45,7 +45,7 @@ Datei_laden <- function(pfad, pattern = NULL, namen_vergeben = TRUE) {
 
 
 
-# In deinem Hauptskript
+
 #source("Pfad/zur/DateiLader.R")
 
 # Dateien laden
