@@ -1015,3 +1015,28 @@ plot_codes
 
 
 ```
+
+
+
+
+## Neue Funktion AnalyseErzieher.R:
+
+```{r}
+source(here("DateiLader", "DateiLader.R"))
+
+data_benefits  <- Datei_laden(
+ pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Berufe",
+  pattern = "kldb_"
+)
+
+
+source(here("AnalyseErzieher","AnalyseErzieher.R"))
+
+regebnisse <- analysiere_erzieher(data_benefits)
+
+
+
+```
+
+
+
