@@ -602,7 +602,6 @@ df <- df %>%
     hat_urlaubsgeld_13_monatsgehalt = grepl("Urlaubsgeld_Weihnachts_13_Gehalt",span_normalized,ignore.case = TRUE),
     hat_fortbildung = grepl("Fortbildung|Weiterbildung", concept, ignore.case = TRUE),
     hat_gesundheit = grepl("Gesundheit", span, ignore.case = TRUE),
-    hat_wasser = grepl("Wasser|Getränke|Kaffee",concept, ignore.case = TRUE)
   )
 
 # 2. Gruppieren nach posting_id, Zusammenfassung der Benefits pro Ausschreibung
@@ -667,374 +666,52 @@ ggplot(benefits_summary, aes(x = anzahl_benefits)) +
 
 ```
 
-## KLDB : Erzieher:Innen 2019
+## Benefits: Erzieher:Innen
 
 ```{r}
+source(here::here("R_Libraries", "Libraries.R")) #here("Ordner1","Dateiname.ext") lädt Bibliotheken
+
 source(here("DateiLader", "DateiLader.R"))
 
 data_benefits  <- Datei_laden(
+ pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Zusatzleistungen - Wir bieten",
+  pattern = "Benefits_2019"
+)
+
+source(here("AnalyseErzieher","BenefitsErzieher.R"))
+
+resultate <- analysiere_benefits(data_benefits)
+
+print(resultate$plot)
+
+```
+
+
+
+
+
+
+
+## KLDB : Erzieher:Innen 
+
+
+
+```{r}
+source(here::here("R_Libraries", "Libraries.R")) #here("Ordner1","Dateiname.ext") lädt Bibliotheken
+
+source(here("DateiLader", "DateiLader.R"))
+
+data  <- Datei_laden(
  pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Berufe",
   pattern = "kldb_"
 )
 
 
+source(here("AnalyseErzieher","KLDBErzieher.R"))
 
-kldb19 <- data_benefits[[1]]
-kldb20 <- data_benefits[[2]]
-kldb21 <- data_benefits[[3]]
-kldb22 <- data_benefits[[4]]
-kldb23 <- data_benefits[[5]]
-kldb24 <- data_benefits[[6]]
+ergebnisse <- kldb_erzieher(data)
 
-
-
-
-```
-
-```{r}
-kldb19
-
-```
-
-## kldb: 2019
-
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
-
-```{r}
-erzieherInnen <- kldb19 %>%
-  filter(kldb_id %in% c(83110:83114))%>%
-  group_by(kldb_id) %>%
-  summarise(anzahl = n()) %>%
-  mutate(prozent = round(100*anzahl/sum(anzahl),2))%>%
-  arrange(desc(prozent)) 
-  
-
-
-
-
-summary(erzieherInnen)
-
-
-
-```
-
-## Visualisierung:
-
-```{r}
-plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
-  geom_col(fill = "steelblue")+
-  geom_text(aes(label = paste0(prozent, "%")),
-            vjust = -0.3,
-            size = 4)+
-  scale_x_discrete(labels = c(
-   "83111" = "Aushilfe", 
-   "83112" = "Fachkraft", 
-   "83113" = "Spezialist",
-   "83114" = "Experte"
-   )) +
-  scale_y_continuous(labels = function(x) paste0(x, "%"))+
-  labs(
-    x = "KLD-Berufsgruppe",
-    y = "Prozentanteil",
-    title = "Erzieher:innen - Verteilung nach KLD-Berufsgruppen im Jahre 2019"
-  ) +
-  theme_minimal(base_size = 13)+
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(face = "bold")
-  )
-plot_codes
-
-```
-
-## kldb:2020
-
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
-
-```{r}
-erzieherInnen <- kldb20 %>%
-  filter(kldb_id %in% c(83110:83114))%>%
-  group_by(kldb_id) %>%
-  summarise(anzahl = n()) %>%
-  mutate(prozent = round(100*anzahl/sum(anzahl),2))%>%
-  arrange(desc(prozent)) 
-  
-
-
-
-
-summary(erzieherInnen)
-
-
-
-```
-
-## Visualisierung:
-
-```{r}
-plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
-  geom_col(fill = "steelblue")+
-  geom_text(aes(label = paste0(prozent, "%")),
-            vjust = -0.3,
-            size = 4)+
-  scale_x_discrete(labels = c(
-   "83111" = "Aushilfe", 
-   "83112" = "Fachkraft", 
-   "83113" = "Spezialist",
-   "83114" = "Experte"
-   )) +
-  scale_y_continuous(labels = function(x) paste0(x, "%"))+
-  labs(
-    x = "KLD-Berufsgruppe",
-    y = "Prozentanteil",
-    title = "Erzieher:innen - Verteilung nach KLD-Berufsgruppen im Jahre 2020"
-  ) +
-  theme_minimal(base_size = 13)+
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(face = "bold")
-  )
-plot_codes
-
-
-
-```
-
-## 2021
-
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
-
-```{r}
-erzieherInnen <- kldb21 %>%
-  filter(kldb_id %in% c(83110:83114))%>%
-  group_by(kldb_id) %>%
-  summarise(anzahl = n()) %>%
-  mutate(prozent = round(100*anzahl/sum(anzahl),2))%>%
-  arrange(desc(prozent)) 
-  
-
-
-
-
-summary(erzieherInnen)
-
-
-
-```
-
-## visualisierung:
-
-```{r}
-plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
-  geom_col(fill = "steelblue")+
-  geom_text(aes(label = paste0(prozent, "%")),
-            vjust = -0.3,
-            size = 4)+
-  scale_x_discrete(labels = c(
-   "83111" = "Aushilfe", 
-   "83112" = "Fachkraft", 
-   "83113" = "Spezialist",
-   "83114" = "Experte"
-   )) +
-  scale_y_continuous(labels = function(x) paste0(x, "%"))+
-  labs(
-    x = "KLD-Berufsgruppe",
-    y = "Prozentanteil",
-    title = "Erzieher:innen - Verteilung nach KLD-Berufsgruppen im Jahre 2021"
-  ) +
-  theme_minimal(base_size = 13)+
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(face = "bold")
-  )
-plot_codes
-
-
-
-
-```
-
-## 2022
-
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
-
-```{r}
-erzieherInnen <- kldb22 %>%
-  filter(kldb_id %in% c(83110:83114))%>%
-  group_by(kldb_id) %>%
-  summarise(anzahl = n()) %>%
-  mutate(prozent = round(100*anzahl/sum(anzahl),2))%>%
-  arrange(desc(prozent)) 
-  
-
-
-
-
-summary(erzieherInnen)
-
-
-
-```
-
-```{r}
-plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
-  geom_col(fill = "steelblue")+
-  geom_text(aes(label = paste0(prozent, "%")),
-            vjust = -0.3,
-            size = 4)+
-  scale_x_discrete(labels = c(
-   "83111" = "Aushilfe", 
-   "83112" = "Fachkraft", 
-   "83113" = "Spezialist",
-   "83114" = "Experte"
-   )) +
-  scale_y_continuous(labels = function(x) paste0(x, "%"))+
-  labs(
-    x = "KLD-Berufsgruppe",
-    y = "Prozentanteil",
-    title = "Erzieher:innen - Verteilung nach KLD-Berufsgruppen im Jahre 2022"
-  ) +
-  theme_minimal(base_size = 13)+
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(face = "bold")
-  )
-plot_codes
-
-
-
-
-```
-
-## 2023
-
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
-
-```{r}
-erzieherInnen <- kldb23 %>%
-  filter(kldb_id %in% c(83110:83114))%>%
-  group_by(kldb_id) %>%
-  summarise(anzahl = n()) %>%
-  mutate(prozent = round(100*anzahl/sum(anzahl),2))%>%
-  arrange(desc(prozent)) 
-  
-
-
-
-
-summary(erzieherInnen)
-
-
-
-```
-
-```{r}
-plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
-  geom_col(fill = "steelblue")+
-  geom_text(aes(label = paste0(prozent, "%")),
-            vjust = -0.3,
-            size = 4)+
-  scale_x_discrete(labels = c(
-   "83111" = "Aushilfe", 
-   "83112" = "Fachkraft", 
-   "83113" = "Spezialist",
-   "83114" = "Experte"
-   )) +
-  scale_y_continuous(labels = function(x) paste0(x, "%"))+
-  labs(
-    x = "KLD-Berufsgruppe",
-    y = "Prozentanteil",
-    title = "Erzieher:innen - Verteilung nach KLD-Berufsgruppen im Jahre 2023"
-  ) +
-  theme_minimal(base_size = 13)+
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(face = "bold")
-  )
-plot_codes
-
-
-
-
-```
-
-## 2024
-
-1:finde alle kldb einträge für Berufscode: 8311X → Erzieher\*innen
-
-```{r}
-erzieherInnen <- kldb24 %>%
-  filter(kldb_id %in% c(83110:83114))%>%
-  group_by(kldb_id) %>%
-  summarise(anzahl = n()) %>%
-  mutate(prozent = round(100*anzahl/sum(anzahl),2))%>%
-  arrange(desc(prozent)) 
-  
-
-
-
-
-summary(erzieherInnen)
-
-
-
-```
-
-```{r}
-plot_codes <- ggplot(erzieherInnen, aes(x = reorder(kldb_id, prozent), y= prozent))+
-  geom_col(fill = "steelblue")+
-  geom_text(aes(label = paste0(prozent, "%")),
-            vjust = -0.3,
-            size = 4)+
-  scale_x_discrete(labels = c(
-   "83111" = "Aushilfe", 
-   "83112" = "Fachkraft", 
-   "83113" = "Spezialist",
-   "83114" = "Experte"
-   )) +
-  scale_y_continuous(labels = function(x) paste0(x, "%"))+
-  labs(
-    x = "KLD-Berufsgruppe",
-    y = "Prozentanteil",
-    title = "Erzieher:innen - Verteilung nach KLD-Berufsgruppen im Jahre 2024"
-  ) +
-  theme_minimal(base_size = 13)+
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(face = "bold")
-  )
-plot_codes
-
-
-
-
-```
-
-
-
-
-## Neue Funktion AnalyseErzieher.R:
-
-```{r}
-source(here("DateiLader", "DateiLader.R"))
-
-data_benefits  <- Datei_laden(
- pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Berufe",
-  pattern = "kldb_"
-)
-
-
-source(here("AnalyseErzieher","AnalyseErzieher.R"))
-
-regebnisse <- analysiere_erzieher(data_benefits)
-
-
+print(ergebnisse$plot) 
 
 ```
 
