@@ -68,8 +68,12 @@ analysiere_benefits <- function(data_benefits,
   # Plot erstellen
   benefit_plot <- ggplot(daten_long, aes(x = Benefit, y = Prozent)) +
     geom_col(fill = "steelblue") +
-    geom_text(aes(label = paste0(round(Prozent, 1), "%")),
-              vjust = -0.3, size = 3) +
+    geom_text(aes(
+      label = paste0(prozent, "%"),
+      vjust = ifelse(prozent < 50, -0.3, 1.5),
+      color = ifelse(prozent < 50, "black", "white")
+    ), size = 3, show.legend = FALSE) +
+    scale_color_identity()  +
     facet_wrap(~ jahr, scales = "free_x") +
     labs(
       title = "Verteilung ausgewählter Benefits über Jahre",
