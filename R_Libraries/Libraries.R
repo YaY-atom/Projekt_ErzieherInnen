@@ -29,7 +29,7 @@ required_packages <- c(
   "caret", "randomForest", "e1071",
   
   # Sonstiges / Nützliches
-  "stringr", "forcats", "knitr", "kableExtra", "here"
+  "stringr", "forcats", "knitr", "kableExtra", "here", "progressr"
 )
 
 # ============================================================

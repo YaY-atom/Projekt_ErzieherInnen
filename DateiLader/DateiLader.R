@@ -1,45 +1,63 @@
 # DateiLader.R
 
-Datei_laden <- function(pfad, pattern = NULL, namen_vergeben = TRUE) {
-  # Lade nötige Pakete
-  if (!requireNamespace("readr", quietly = TRUE)) install.packages("readr")
-  if (!requireNamespace("readxl", quietly = TRUE)) install.packages("readxl")
+Datei_laden <- function(pfad, pattern = NULL, namen_vergeben = TRUE, use_fread = TRUE) {
+  # Sicherstellen, dass benötigte Pakete geladen sind
+  required_pkgs <- c("data.table", "readxl")
+  new_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
+  if (length(new_pkgs) > 0) install.packages(new_pkgs)
   
-  # Alle csv- und xlsx-Dateien im Pfad (rekursiv)
+  # Alle unterstützten Dateitypen
   alle_dateien <- list.files(
-    path = pfad, 
-    pattern = "\\.(csv|xlsx)$", 
+    path = pfad,
+    pattern = "\\.(csv|xlsx|xls)$",
     recursive = TRUE,
     full.names = TRUE,
     ignore.case = TRUE
   )
   
-  # Optional: Filter nach Such-Pattern
+  # Optional: Nach Muster filtern
   if (!is.null(pattern)) {
-    dateien_zu_laden <- grep(pattern, alle_dateien, value = TRUE)
-  } else {
-    dateien_zu_laden <- alle_dateien
+    alle_dateien <- grep(pattern, alle_dateien, value = TRUE)
   }
   
-  # Dateien laden
-  geladene_daten <- lapply(dateien_zu_laden, function(datei) {
-    if (grepl("\\.csv$", datei, ignore.case = TRUE)) {
-      readr::read_csv(datei, show_col_types = FALSE)
-    } else if (grepl("\\.xlsx$", datei, ignore.case = TRUE)) {
-      readxl::read_excel(datei)
-    } else {
-      NULL
-    }
-  })
+  if (length(alle_dateien) == 0) {
+    warning("Keine passenden Dateien gefunden.")
+    return(list())
+  }
   
-  # Optional: Benenne Liste nach Dateinamen
+  # Lade-Funktion pro Datei
+  lade_einzeldatei <- function(datei) {
+    tryCatch({
+      if (grepl("\\.csv$", datei, ignore.case = TRUE)) {
+        if (use_fread) {
+          data.table::fread(datei)
+        } else {
+          readr::read_csv(datei, show_col_types = FALSE)
+        }
+      } else if (grepl("\\.xlsx?$", datei, ignore.case = TRUE)) {
+        readxl::read_excel(datei)
+      } else {
+        NULL
+      }
+    }, error = function(e) {
+      warning(paste("Fehler beim Laden von:", datei, "->", e$message))
+      return(NULL)
+    })
+  }
+  
+  # Daten laden
+  geladene_daten <- lapply(alle_dateien, lade_einzeldatei)
+  
+  # Optional: Liste benennen
   if (namen_vergeben) {
-    names(geladene_daten) <- basename(dateien_zu_laden)
+    names(geladene_daten) <- basename(alle_dateien)
   }
+  
+  # Entferne fehlgeschlagene Ladevorgänge
+  geladene_daten <- Filter(Negate(is.null), geladene_daten)
   
   return(geladene_daten)
 }
-
 
 
 

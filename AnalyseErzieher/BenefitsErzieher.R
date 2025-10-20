@@ -3,77 +3,71 @@ library(tidyr)
 library(ggplot2)
 library(stringr)
 library(forcats)
-
 analysiere_benefits <- function(data_benefits,
-                                spalten = c("concept", "span", "span_normalized"),
-                                filter_liste = list(
-                                  hat_13_monatsgehalt = "Weihnachts_13_Gehalt",
-                                  hat_urlaubsgeld = "Urlaubsgeld",
-                                  hat_fortbildung = "Fortbildung|Weiterbildung",
-                                  hat_gesundheit = "Gesundheit"
-                                )) {
+                                   spalten = c("concept", "span", "span_normalized"),
+                                   filter_liste = list(
+                                     hat_13_monatsgehalt = "Weihnachts_13_Gehalt",
+                                     hat_urlaubsgeld = "Urlaubsgeld",
+                                     hat_fortbildung = "Fortbildung|Weiterbildung",
+                                     hat_gesundheit = "Gesundheit"
+                                   )) {
   
   benefit_names <- names(filter_liste)
   
   # Alle Dataframes zusammenführen & 'jahr' extrahieren
-  df <- bind_rows(Map(function(df, name) {
-    df$jahr <- as.integer(str_extract(name, "\\d{4}"))
-    df
-  }, data_benefits, names(data_benefits)))
+  list_dt <- Map(function(df, name) {
+    dt <- as.data.table(df)
+    dt[, jahr := as.integer(str_extract(name, "\\d{4}"))]
+    return(dt)
+  }, data_benefits, names(data_benefits))
+  
+  df <- rbindlist(list_dt, use.names = TRUE, fill = TRUE)
   
   # Relevante Spalten zu character konvertieren
-  df <- df %>%
-    mutate(across(all_of(intersect(spalten, names(.))), as.character))
+  spalten_vorhanden <- intersect(spalten, names(df))
+  df[, (spalten_vorhanden) := lapply(.SD, as.character), .SDcols = spalten_vorhanden]
   
-  # Benefit-Flags berechnen (außerhalb von mutate)
-  benefit_flags <- setNames(
-    lapply(filter_liste, function(pattern) {
-      rowSums(sapply(intersect(spalten, names(df)), function(sp) {
-        grepl(pattern, df[[sp]], ignore.case = TRUE)
-      })) > 0
-    }),
-    benefit_names
-  )
-  
-  # Flags als neue Spalten hinzufügen
-  df <- df %>%
-    mutate(!!!benefit_flags)
+  # Benefit-Flags berechnen
+  for (benefit in benefit_names) {
+    pattern <- filter_liste[[benefit]]
+    df[, (benefit) := rowSums(sapply(.SD, function(spalte) {
+      grepl(pattern, spalte, ignore.case = TRUE)
+    })) > 0, .SDcols = spalten_vorhanden]
+  }
   
   # Gruppieren und aggregieren
-  summary_df <- df %>%
-    group_by(posting_id, jahr) %>%
-    summarise(
-      anzahl_benefits = n(),
-      across(all_of(benefit_names), any),
-      .groups = "drop"
-    )
+  summary_df <- df[, c(.N, lapply(.SD, any)), 
+                   by = .(posting_id, jahr), 
+                   .SDcols = benefit_names]
+  setnames(summary_df, "N", "anzahl_benefits")
   
-  # Umformen und zählen
-  daten_long <- summary_df %>%
-    pivot_longer(cols = all_of(benefit_names), names_to = "Benefit", values_to = "vorhanden") %>%
-    filter(vorhanden) %>%
-    count(jahr, Benefit, name = "Anzahl")
+  # Umformen in langes Format
+  daten_long <- melt(summary_df,
+                     id.vars = c("posting_id", "jahr", "anzahl_benefits"),
+                     measure.vars = benefit_names,
+                     variable.name = "Benefit",
+                     value.name = "vorhanden")[vorhanden == TRUE]
   
-  # Gesamtzahl je Jahr
-  gesamtanzahl <- count(summary_df, jahr, name = "gesamt")
+  # Zählen je Jahr und Benefit
+  daten_long <- daten_long[, .(Anzahl = .N), by = .(jahr, Benefit)]
+  
+  # Gesamtzahl pro Jahr
+  gesamtanzahl <- summary_df[, .(gesamt = .N), by = jahr]
   
   # Prozent berechnen und sortieren
-  daten_long <- daten_long %>%
-    left_join(gesamtanzahl, by = "jahr") %>%
-    mutate(
-      Prozent = Anzahl / gesamt * 100,
-      Benefit = fct_reorder(Benefit, Prozent, .desc = TRUE)
-    )
+  daten_long <- merge(daten_long, gesamtanzahl, by = "jahr")
+  daten_long[, Prozent := Anzahl / gesamt * 100]
+  daten_long[, Benefit := fct_reorder(Benefit, Prozent, .desc = TRUE)]
   
   # Plot erstellen
   benefit_plot <- ggplot(daten_long, aes(x = Benefit, y = Prozent)) +
     geom_col(fill = "steelblue") +
     geom_text(aes(
-      label = paste0(prozent, "%"),
-      vjust = ifelse(prozent < 50, -0.3, 1.5),
-      color = ifelse(prozent < 50, "black", "white")
+      label = paste0(round(Prozent, 1), "%"),
+      vjust = ifelse(Prozent < 50, -0.3, 1.5),
+      color = ifelse(Prozent < 50, "black", "white")
     ), size = 3, show.legend = FALSE) +
-    scale_color_identity()  +
+    scale_color_identity() +
     facet_wrap(~ jahr, scales = "free_x") +
     labs(
       title = "Verteilung ausgewählter Benefits über Jahre",
@@ -82,14 +76,13 @@ analysiere_benefits <- function(data_benefits,
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
-  # Rückgabe als Liste
+  # Rückgabe
   list(
     daten = summary_df,
     daten_long = daten_long,
     plot = benefit_plot
   )
 }
-
 
 
 #resultate <- analysiere_benefits(data_benefits) <= anwendung im code
