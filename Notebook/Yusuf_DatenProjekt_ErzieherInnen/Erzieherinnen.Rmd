@@ -33,17 +33,23 @@ data_benefits  <- Datei_laden(
  pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Zusatzleistungen - Wir bieten",
   pattern = "Benefits_"
 )
-
+handlers("rstudio") 
 source(here("AnalyseErzieher","BenefitsErzieher.R"))
 
 resultate <- analysiere_benefits(data_benefits)
 
 print(resultate$plot)
 
+write.csv(resultate$daten_long,)
+
 ```
 
 
+```{r}
+print(resultate$daten_long)
 
+write.csv(resultate$daten_long, "benefits_19bis24.csv", row.names = FALSE)
+```
 
 
 
