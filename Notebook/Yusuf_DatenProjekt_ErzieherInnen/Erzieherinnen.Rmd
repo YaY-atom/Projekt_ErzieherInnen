@@ -40,19 +40,8 @@ resultate <- analysiere_benefits(data_benefits)
 
 print(resultate$plot)
 
-write.csv(resultate$daten_long,)
 
 ```
-
-
-```{r}
-print(resultate$daten_long)
-
-write.csv(resultate$daten_long, "benefits_19bis24.csv", row.names = FALSE)
-```
-
-
-
 
 ## KLDB : Erzieher:Innen 
 
@@ -77,20 +66,236 @@ print(ergebnisse$plot)
 
 ```
 
-## Verbis
+
+
+## neuer code:
+
+
 
 ```{r}
-source(here::here("R_Libraries", "Libraries.R")) #here("Ordner1","Dateiname.ext") lädt Bibliotheken
+local({
+  # --- Bibliotheken laden ---
+  source(here::here("R_Libraries", "Libraries.R"))
+  
+  
+  # --- Konfiguration ---
+  base_path <- "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze"
+  parquet_path <- "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/Desktop/Projekte/R"
+  parquet_storage_dir <- file.path(parquet_path, "Parquet_Files")
+  fs::dir_create(parquet_storage_dir, recurse = TRUE)
+  
+  mem_limit_gb <- 6
+  chunk_size <- 1e6
+  log_file <- file.path(parquet_storage_dir, "conversion_log.csv")
 
-source(here("DateiLader", "DateiLader.R"))
+  log_df <- tibble::tibble(
+    file = character(),
+    chunk_number = integer(),
+    rows_in_chunk = integer(),
+    time_sec = numeric(),
+    output_file = character(),
+    status = character()
+  )
+  
+  # --- Hauptfunktion ---
+  convert_csv_to_parquet_chunks <- function(csv_file, parquet_dir) {
+    file_name <- tools::file_path_sans_ext(basename(csv_file))
+    chunk_dir <- file.path(parquet_dir, file_name)
+    fs::dir_create(chunk_dir, recurse = TRUE)
+    
+    message("\n🧬 Starte Transkription: ", basename(csv_file))
+    
+    # 🧪 Schnellcheck: Datei leer oder nur Header?
+    try({
+      preview <- suppressMessages(readr::read_csv(csv_file, n_max = 5, progress = FALSE))
+      if (ncol(preview) == 0 || nrow(preview) == 0) {
+        warning("⚠️ Datei übersprungen (leer oder ohne valide Spalten): ", basename(csv_file))
+        log_df <<- dplyr::add_row(
+          log_df,
+          file = csv_file,
+          chunk_number = 0,
+          rows_in_chunk = 0,
+          time_sec = 0,
+          output_file = NA,
+          status = "skipped_empty"
+        )
+        return(invisible(NULL))
+      }
+    }, silent = TRUE)
+    
+    chunk_i <- 0
+    
+    callback <- function(df, pos) {
+      chunk_i <<- chunk_i + 1
+      
+      # Fortschrittsausgabe
+      message(sprintf("  ➜ Verarbeite Chunk %d (%d Zeilen)", chunk_i, nrow(df)))
+      
+      if (nrow(df) == 0) return()
+      
+      out_file <- file.path(chunk_dir, sprintf("%s_part_%05d.parquet", file_name, chunk_i))
+      
+      t0 <- Sys.time()
+      arrow::write_parquet(df, out_file, compression = "zstd")
+      t1 <- Sys.time()
+      
+      log_df <<- dplyr::add_row(
+        log_df,
+        file = csv_file,
+        chunk_number = chunk_i,
+        rows_in_chunk = nrow(df),
+        time_sec = round(as.numeric(difftime(t1, t0, units = "secs")), 2),
+        output_file = out_file,
+        status = "ok"
+      )
+      
+      rm(df)
+      gc()
+    }
+    
+    # --- Chunk-Reading starten ---
+    tryCatch({
+      readr::read_csv_chunked(
+        file = csv_file,
+        callback = readr::DataFrameCallback$new(callback),
+        chunk_size = chunk_size,
+        progress = TRUE
+      )
+      message("✅ Fertig transkribiert: ", csv_file)
+    },
+    error = function(e) {
+      warning("❌ Fehler bei ", basename(csv_file), ": ", conditionMessage(e))
+      log_df <<- dplyr::add_row(
+        log_df,
+        file = csv_file,
+        chunk_number = NA,
+        rows_in_chunk = NA,
+        time_sec = NA,
+        output_file = NA,
+        status = paste("error:", conditionMessage(e))
+      )
+    })
+  }
+  
+  # --- Verarbeitung aller CSV-Dateien ---
+  csv_files <- list.files(base_path, pattern = "\\.csv(\\.gz)?$", recursive = TRUE, full.names = TRUE)
+  
+  purrr::walk(csv_files, ~ convert_csv_to_parquet_chunks(.x, parquet_storage_dir))
+  
+  readr::write_csv(log_df, log_file)
+  message("📜 Log gespeichert unter: ", log_file)
+})
 
-data_verbis  <- Datei_laden(
- pfad = "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/[P] Zentrum für Datenmanagement - Data Science Lab/Projektarbeit/Jobmonitor Datensätze/Verbis fachkompetenzen -Skills im Beruf",
-  pattern = ""
-)
+```
 
 
-show(data_verbis)
+fehlermeldung: Error in `map()`:
+ℹ In index: 27.
+Caused by error in `data.table::fread()`:
+! Opened 33.70GB (36189116520 bytes) file ok but could not memory map it. This is a 64bit process. There is probably not enough contiguous virtual memory available.
+Run `rlang::last_trace()` to see where the error occurred.
+
+## Masterdatei erstellen:
+
+```{r}
+local({
+  source(here::here("R_Libraries", "Libraries.R"))
+
+  parquet_storage_dir <- "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/Desktop/Projekte/R/Parquet_Files"
+  master_dir <- file.path(parquet_storage_dir, "Master_Erzieherinnen_Fragmente")
+  dir.create(master_dir, showWarnings = FALSE)
+
+  master_file <- file.path(parquet_storage_dir, "Master_Erzieherinnen_merged.parquet")
+
+  mem_limit_gb <- 6
+  chunk_size <- 1e6
+
+  master_log <- tibble(
+    source_file = character(),
+    n_rows = integer(),
+    time_sec = numeric()
+  )
+
+  extract_tn <- function(kldb_id) {
+    ifelse(!is.na(kldb_id) & nchar(kldb_id) >= 5, substr(kldb_id, 5, 5), NA)
+  }
+
+  create_master_erzieherinnen <- function(parquet_dir, output_dir) {
+    parquet_files <- list.files(parquet_dir, pattern = "\\.parquet$", recursive = TRUE, full.names = TRUE)
+
+    message("🧬 Starte Aufbau der Masterdatei für Erzieher:innen ...")
+
+    for (pf in parquet_files) {
+      t0 <- Sys.time()
+      file_name <- basename(pf)
+      year <- stringr::str_extract(file_name, "\\d{4}")
+
+      df <- tryCatch(arrow::read_parquet(pf), error = function(e) NULL)
+      if (is.null(df) || nrow(df) == 0) next
+
+      if (str_detect(file_name, "kldb")) {
+        df <- df %>%
+          dplyr::filter(str_starts(kldb_id, "8311")) %>%
+          dplyr::mutate(year = as.integer(year),
+                        taetigkeitsniveau = extract_tn(kldb_id))
+      } else if (str_detect(file_name, "published_at_source_type_location")) {
+        df <- dplyr::rename(df, posting_id = id)
+      } else if (str_detect(file_name, "sprache_advertiser_contract")) {
+        df <- dplyr::rename(df, posting_id = id)
+      } else if (str_detect(file_name, "Job-Title")) {
+        df <- dplyr::rename(df, posting_id = id)
+      } else if (str_detect(file_name, "NUTSRemote")) {
+        df <- df
+      } else if (str_detect(file_name, "Verbis_Fachkompetenzen_Erzieher")) {
+        df <- dplyr::rename(df, skills = concept)
+      } else if (str_detect(file_name, "transversal")) {
+        df <- dplyr::rename(df, transversal_skills = posting_id)
+      } else if (str_detect(file_name, "Benefits") | str_detect(file_name, "family_compatibility") | str_detect(file_name, "TSC")) {
+        df <- dplyr::rename(df, benefits = concept)
+      } else {
+        next
+      }
+
+      relevant_cols <- c(
+        "posting_id", "kldb_id", "taetigkeitsniveau", "year",
+        "region", "job_title", "language", "advertiser_type_id",
+        "contract_type_id", "remote_category", "skills",
+        "transversal_skills", "benefits", "published_at", "source_type_id"
+      )
+      for (col in setdiff(relevant_cols, names(df))) df[[col]] <- NA
+      df <- df %>% dplyr::select(all_of(relevant_cols))
+
+      # Schreibe jedes Teilergebnis separat
+      out_file <- file.path(output_dir, paste0("fragment_", file_name))
+      arrow::write_parquet(df, out_file, compression = "zstd")
+
+      t1 <- Sys.time()
+      master_log <<- master_log %>%
+        add_row(
+          source_file = file_name,
+          n_rows = nrow(df),
+          time_sec = round(as.numeric(difftime(t1, t0, units = "secs")), 2)
+        )
+
+      message("🔗 Fragment gespeichert: ", out_file, " (", nrow(df), " Zeilen)")
+      rm(df)
+      gc()
+    }
+
+    readr::write_csv(master_log, file.path(output_dir, "master_erzieherinnen_log.csv"))
+    message("✅ Alle Fragmente erfolgreich gespeichert.")
+  }
+
+  # ---- Schritt 1: Fragmente bauen ----
+  create_master_erzieherinnen(parquet_storage_dir, master_dir)
+
+  # ---- Schritt 2: Zu einem logischen Dataset verbinden ----
+  message("🔬 Baue logisches Arrow-Dataset ...")
+  ds <- arrow::open_dataset(master_dir)
+  arrow::write_dataset(ds, path = master_file, format = "parquet", compression = "zstd")
+
+  message("🎉 Master-Erzieherinnen-Datei erstellt unter: ", master_file)
+})
 
 
 ```

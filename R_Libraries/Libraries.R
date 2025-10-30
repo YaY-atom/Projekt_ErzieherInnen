@@ -11,7 +11,7 @@ log_file <- "Libraries_log.txt"
 # ---- Liste aller benötigten Pakete ----
 required_packages <- c(
   # Datenmanipulation & Bereinigung
-  "tidyverse", "data.table", "janitor", "lubridate",
+  "tidyverse", "data.table", "janitor", "lubridate", "glue", "arrow", "future.apply",
   
   # Datenimport & Export
   "readxl", "openxlsx", "haven", "jsonlite",
@@ -29,7 +29,7 @@ required_packages <- c(
   "caret", "randomForest", "e1071",
   
   # Sonstiges / Nützliches
-  "stringr", "forcats", "knitr", "kableExtra", "here", "progressr"
+  "stringr", "forcats", "knitr", "kableExtra", "here", "progressr", "fs", "purrr", "progress"
 )
 
 # ============================================================
