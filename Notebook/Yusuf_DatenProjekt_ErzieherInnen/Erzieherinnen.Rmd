@@ -239,19 +239,22 @@ local({
           dplyr::mutate(year = as.integer(year),
                         taetigkeitsniveau = extract_tn(kldb_id))
       } else if (str_detect(file_name, "published_at_source_type_location")) {
-        df <- dplyr::rename(df, posting_id = id)
+        if("id" %in% names(df)) df <- dplyr::rename(df, posting_id = id)
       } else if (str_detect(file_name, "sprache_advertiser_contract")) {
-        df <- dplyr::rename(df, posting_id = id)
+        if("id" %in% names(df)) df <- dplyr::rename(df, posting_id = id)
       } else if (str_detect(file_name, "Job-Title")) {
-        df <- dplyr::rename(df, posting_id = id)
+        if("id" %in% names(df)) df <- dplyr::rename(df, posting_id = id)
       } else if (str_detect(file_name, "NUTSRemote")) {
         df <- df
       } else if (str_detect(file_name, "Verbis_Fachkompetenzen_Erzieher")) {
-        df <- dplyr::rename(df, skills = concept)
+        if("concept" %in% names(df)) df <- dplyr::rename(df, skills = concept)
       } else if (str_detect(file_name, "transversal")) {
-        df <- dplyr::rename(df, transversal_skills = posting_id)
+        # Nur umbenennen, wenn Zielspalte noch nicht existiert
+        if("posting_id" %in% names(df) && !"transversal_skills" %in% names(df)) {
+          df <- dplyr::rename(df, transversal_skills = posting_id)
+        }
       } else if (str_detect(file_name, "Benefits") | str_detect(file_name, "family_compatibility") | str_detect(file_name, "TSC")) {
-        df <- dplyr::rename(df, benefits = concept)
+        if("concept" %in% names(df)) df <- dplyr::rename(df, benefits = concept)
       } else {
         next
       }
