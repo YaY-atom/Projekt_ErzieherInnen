@@ -199,9 +199,6 @@ Run `rlang::last_trace()` to see where the error occurred.
 
 ```{r}
 local({
-  library(tidyverse)
-  library(arrow)
-  library(here)
 
   source(here::here("R_Libraries", "Libraries.R"))
 
@@ -319,7 +316,7 @@ local({
       gc()
     }
 
-    readr::write_csv(master_log, file.path(output_dir, "master_erzieherinnen_log.csv"))
+    readr::write_csv(master_log, file.path(dirname(output_dir), "master_erzieherinnen_log.csv"))
     message("✅ Alle Fragmente erfolgreich gespeichert.")
   }
 
@@ -328,7 +325,7 @@ local({
 
   # ---- Schritt 2: Zu einem logischen Dataset verbinden ----
   message("🔬 Baue logisches Arrow-Dataset ...")
-  ds <- arrow::open_dataset(master_dir)
+  ds <- arrow::open_dataset(master_dir, format = "parquet")
   arrow::write_dataset(ds, path = master_file, format = "parquet", compression = "zstd")
 
   message("🎉 Master-Erzieherinnen-Datei erstellt unter: ", master_file)
