@@ -68,7 +68,7 @@ print(ergebnisse$plot)
 
 
 
-## neuer code:
+## chunkbasiertes verarbeiten aller Dateien:
 
 
 
@@ -199,6 +199,10 @@ Run `rlang::last_trace()` to see where the error occurred.
 
 ```{r}
 local({
+  library(tidyverse)
+  library(arrow)
+  library(here)
+
   source(here::here("R_Libraries", "Libraries.R"))
 
   parquet_storage_dir <- "C:/Users/YAVU061/OneDrive - Bertelsmann Stiftung/Desktop/Projekte/R/Parquet_Files"
@@ -206,9 +210,6 @@ local({
   dir.create(master_dir, showWarnings = FALSE)
 
   master_file <- file.path(parquet_storage_dir, "Master_Erzieherinnen_merged.parquet")
-
-  mem_limit_gb <- 6
-  chunk_size <- 1e6
 
   master_log <- tibble(
     source_file = character(),
@@ -220,6 +221,32 @@ local({
     ifelse(!is.na(kldb_id) & nchar(kldb_id) >= 5, substr(kldb_id, 5, 5), NA)
   }
 
+  # --- Definiere gewünschte Spalten und ihre R-Typen ---
+  relevant_cols <- c(
+    "posting_id", "kldb_id", "taetigkeitsniveau", "year",
+    "region", "job_title", "language", "advertiser_type_id",
+    "contract_type_id", "remote_category", "skills",
+    "transversal_skills", "benefits", "published_at", "source_type_id"
+  )
+
+  relevant_cols_types <- list(
+    posting_id = "character",
+    kldb_id = "character",
+    taetigkeitsniveau = "character",
+    year = "integer",
+    region = "character",
+    job_title = "character",
+    language = "character",
+    advertiser_type_id = "character",
+    contract_type_id = "character",
+    remote_category = "character",
+    skills = "character",
+    transversal_skills = "character",
+    benefits = "character",
+    published_at = "POSIXct",
+    source_type_id = "character"
+  )
+
   create_master_erzieherinnen <- function(parquet_dir, output_dir) {
     parquet_files <- list.files(parquet_dir, pattern = "\\.parquet$", recursive = TRUE, full.names = TRUE)
 
@@ -230,45 +257,52 @@ local({
       file_name <- basename(pf)
       year <- stringr::str_extract(file_name, "\\d{4}")
 
-      df <- tryCatch(arrow::read_parquet(pf), error = function(e) NULL)
+      df <- tryCatch(arrow::read_parquet(pf) %>% as_tibble(), error = function(e) NULL)
       if (is.null(df) || nrow(df) == 0) next
 
+      # --- Datei-spezifische Anpassungen ---
       if (str_detect(file_name, "kldb")) {
         df <- df %>%
-          dplyr::filter(str_starts(kldb_id, "8311")) %>%
-          dplyr::mutate(year = as.integer(year),
-                        taetigkeitsniveau = extract_tn(kldb_id))
-      } else if (str_detect(file_name, "published_at_source_type_location")) {
-        if("id" %in% names(df)) df <- dplyr::rename(df, posting_id = id)
-      } else if (str_detect(file_name, "sprache_advertiser_contract")) {
-        if("id" %in% names(df)) df <- dplyr::rename(df, posting_id = id)
-      } else if (str_detect(file_name, "Job-Title")) {
-        if("id" %in% names(df)) df <- dplyr::rename(df, posting_id = id)
-      } else if (str_detect(file_name, "NUTSRemote")) {
-        df <- df
+          filter(str_starts(kldb_id, "8311")) %>%
+          mutate(year = as.integer(year),
+                 taetigkeitsniveau = extract_tn(kldb_id))
+      } else if (str_detect(file_name, "published_at_source_type_location") |
+                 str_detect(file_name, "sprache_advertiser_contract") |
+                 str_detect(file_name, "Job-Title")) {
+        if("id" %in% names(df)) df <- rename(df, posting_id = id)
       } else if (str_detect(file_name, "Verbis_Fachkompetenzen_Erzieher")) {
-        if("concept" %in% names(df)) df <- dplyr::rename(df, skills = concept)
+        if("concept" %in% names(df)) df <- rename(df, skills = concept)
       } else if (str_detect(file_name, "transversal")) {
-        # Nur umbenennen, wenn Zielspalte noch nicht existiert
         if("posting_id" %in% names(df) && !"transversal_skills" %in% names(df)) {
-          df <- dplyr::rename(df, transversal_skills = posting_id)
+          df <- rename(df, transversal_skills = posting_id)
         }
       } else if (str_detect(file_name, "Benefits") | str_detect(file_name, "family_compatibility") | str_detect(file_name, "TSC")) {
-        if("concept" %in% names(df)) df <- dplyr::rename(df, benefits = concept)
+        if("concept" %in% names(df)) df <- rename(df, benefits = concept)
+      } else if (str_detect(file_name, "NUTSRemote")) {
+        df <- df
       } else {
         next
       }
 
-      relevant_cols <- c(
-        "posting_id", "kldb_id", "taetigkeitsniveau", "year",
-        "region", "job_title", "language", "advertiser_type_id",
-        "contract_type_id", "remote_category", "skills",
-        "transversal_skills", "benefits", "published_at", "source_type_id"
-      )
-      for (col in setdiff(relevant_cols, names(df))) df[[col]] <- NA
-      df <- df %>% dplyr::select(all_of(relevant_cols))
+      # --- Fehlende Spalten hinzufügen und Typen forcieren ---
+      for (col in relevant_cols) {
+        if (!col %in% names(df)) {
+          df[[col]] <- switch(relevant_cols_types[[col]],
+                              "character" = as.character(NA),
+                              "integer" = as.integer(NA),
+                              "POSIXct" = as.POSIXct(NA, origin = "1970-01-01"))
+        } else {
+          df[[col]] <- switch(relevant_cols_types[[col]],
+                              "character" = as.character(df[[col]]),
+                              "integer" = as.integer(df[[col]]),
+                              "POSIXct" = as.POSIXct(df[[col]], origin = "1970-01-01"),
+                              df[[col]])
+        }
+      }
 
-      # Schreibe jedes Teilergebnis separat
+      df <- df %>% select(all_of(relevant_cols))
+
+      # --- Fragment schreiben ---
       out_file <- file.path(output_dir, paste0("fragment_", file_name))
       arrow::write_parquet(df, out_file, compression = "zstd")
 
@@ -299,7 +333,6 @@ local({
 
   message("🎉 Master-Erzieherinnen-Datei erstellt unter: ", master_file)
 })
-
 
 ```
 
